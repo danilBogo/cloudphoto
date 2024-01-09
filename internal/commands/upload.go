@@ -1,9 +1,8 @@
-﻿package commands
+package commands
 
 import (
 	"cloudphoto/internal/constants"
 	"cloudphoto/internal/services"
-	"cloudphoto/internal/utils"
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
@@ -24,14 +23,20 @@ func initUpload(cmd *cobra.Command, _ []string) {
 
 	photos := getPhotosFromDirectory(path)
 
-	iniConfig := utils.GetIniConfig()
+	configManager, err := services.NewConfigManager()
+	services.HandleError(err)
 
-	uploadPhotos(iniConfig, photos, album)
+	iniConfig, err := configManager.TryGetConfig()
+	services.HandleError(err)
+
+	awsConfig := iniConfig.ToAwsConfig()
+	awsManager, err := services.NewAwsManager(awsConfig)
+	services.HandleError(err)
+
+	uploadPhotos(awsManager, photos, album, iniConfig.Bucket)
 }
 
-func uploadPhotos(iniConfig *services.IniConfig, photos []string, album string) {
-	awsManager := utils.GetAwsManager(iniConfig)
-
+func uploadPhotos(awsManager *services.AwsManager, photos []string, album, bucket string) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(photos))
 	for _, photo := range photos {
@@ -44,7 +49,7 @@ func uploadPhotos(iniConfig *services.IniConfig, photos []string, album string) 
 				return
 			}
 
-			err = awsManager.UploadPhoto(iniConfig.Bucket, photoKey, data)
+			err = awsManager.UploadPhoto(bucket, photoKey, data)
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
@@ -60,7 +65,7 @@ func getPhotosFromDirectory(path string) []string {
 	var jpegFiles []string
 
 	files, err := os.ReadDir(path)
-	utils.HandleError(err)
+	services.HandleError(err)
 
 	for _, file := range files {
 		if file.IsDir() {
@@ -74,7 +79,7 @@ func getPhotosFromDirectory(path string) []string {
 	}
 
 	if len(jpegFiles) == 0 {
-		utils.HandleError(errors.New(fmt.Sprintf("In directory %v there is no photos", path)))
+		services.HandleError(errors.New(fmt.Sprintf("In directory %v there is no photos", path)))
 	}
 
 	return jpegFiles

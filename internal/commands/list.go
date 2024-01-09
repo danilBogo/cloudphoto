@@ -1,8 +1,8 @@
-﻿package commands
+package commands
 
 import (
 	"cloudphoto/internal/constants"
-	"cloudphoto/internal/utils"
+	"cloudphoto/internal/services"
 	"fmt"
 	"github.com/spf13/cobra"
 )
@@ -16,18 +16,23 @@ var CommandList = &cobra.Command{
 func initList(cmd *cobra.Command, _ []string) {
 	album, _ := cmd.Flags().GetString(constants.Album)
 
-	iniConfig := utils.GetIniConfig()
+	configManager, err := services.NewConfigManager()
+	services.HandleError(err)
 
-	awsManager := utils.GetAwsManager(iniConfig)
+	iniConfig, err := configManager.TryGetConfig()
+	services.HandleError(err)
+
+	awsConfig := iniConfig.ToAwsConfig()
+	awsManager, err := services.NewAwsManager(awsConfig)
+	services.HandleError(err)
 
 	var result []string
-	var err error
 	if len(album) == 0 {
 		result, err = awsManager.GetPrefixes(iniConfig.Bucket)
-		utils.HandleError(err)
+		services.HandleError(err)
 	} else {
 		result, err = awsManager.GetPhotos(iniConfig.Bucket, album)
-		utils.HandleError(err)
+		services.HandleError(err)
 	}
 
 	for _, val := range result {

@@ -1,9 +1,8 @@
-﻿package commands
+package commands
 
 import (
 	"cloudphoto/internal/constants"
 	"cloudphoto/internal/services"
-	"cloudphoto/internal/utils"
 	"fmt"
 	"github.com/spf13/cobra"
 )
@@ -35,28 +34,30 @@ func scanValue(printingValue string) string {
 	var result string
 	fmt.Println(printingValue)
 	_, err := fmt.Scan(&result)
-	utils.HandleError(err)
+	services.HandleError(err)
 
 	return result
 }
 
 func generateOrUpdateIni(iniConfig *services.IniConfig) {
 	configManager, err := services.NewConfigManager()
-	utils.HandleError(err)
+	services.HandleError(err)
 
 	err = configManager.GenerateIni(iniConfig)
-	utils.HandleError(err)
+	services.HandleError(err)
 }
 
 func createBucketIfNotExist(iniConfig *services.IniConfig) {
-	awsManager := utils.GetAwsManager(iniConfig)
+	awsConfig := iniConfig.ToAwsConfig()
+	awsManager, err := services.NewAwsManager(awsConfig)
+	services.HandleError(err)
 
 	exists, err := awsManager.BucketExists(iniConfig.Bucket)
-	utils.HandleErrorWithText(err, fmt.Sprintf("Bucket with name %v already exists", iniConfig.Bucket))
+	services.HandleErrorWithText(err, fmt.Sprintf("Bucket with name %v already exists", iniConfig.Bucket))
 
 	if !exists {
 		err := awsManager.CreateBucket(iniConfig.Bucket)
-		utils.HandleErrorWithText(err, fmt.Sprintf("Can not create bucket with name %v", iniConfig.Bucket))
+		services.HandleErrorWithText(err, fmt.Sprintf("Can not create bucket with name %v", iniConfig.Bucket))
 
 		fmt.Printf("Bucket with name '%v' created\n", iniConfig.Bucket)
 	} else {

@@ -1,9 +1,8 @@
-﻿package commands
+package commands
 
 import (
 	"cloudphoto/internal/constants"
 	"cloudphoto/internal/services"
-	"cloudphoto/internal/utils"
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/spf13/cobra"
@@ -16,16 +15,22 @@ var CommandMksite = &cobra.Command{
 }
 
 func initMksite(_ *cobra.Command, _ []string) {
-	iniConfig := utils.GetIniConfig()
+	configManager, err := services.NewConfigManager()
+	services.HandleError(err)
 
-	awsManager := utils.GetAwsManager(iniConfig)
+	iniConfig, err := configManager.TryGetConfig()
+	services.HandleError(err)
+
+	awsConfig := iniConfig.ToAwsConfig()
+	awsManager, err := services.NewAwsManager(awsConfig)
+	services.HandleError(err)
 
 	setReadPublic(iniConfig.Bucket, awsManager)
 
 	configureStaticWebsite(iniConfig.Bucket, awsManager)
 
 	htmlManager, err := services.NewHtmlManager()
-	utils.HandleError(err)
+	services.HandleError(err)
 
 	count := generateAlbumsHtml(iniConfig.Bucket, htmlManager, awsManager)
 
@@ -38,12 +43,12 @@ func initMksite(_ *cobra.Command, _ []string) {
 
 func setReadPublic(bucket string, awsManager *services.AwsManager) {
 	err := awsManager.PutBucketACL(bucket, s3.BucketCannedACLPublicRead)
-	utils.HandleError(err)
+	services.HandleError(err)
 }
 
 func configureStaticWebsite(bucket string, awsManager *services.AwsManager) {
 	err := awsManager.ConfigureStaticWebsite(bucket)
-	utils.HandleError(err)
+	services.HandleError(err)
 }
 
 func generateAlbumsHtml(bucket string, htmlManager *services.HtmlManager, awsManager *services.AwsManager) int {
@@ -72,23 +77,23 @@ func generateAlbumsHtml(bucket string, htmlManager *services.HtmlManager, awsMan
 		}
 	}
 
-	utils.HandleError(err)
+	services.HandleError(err)
 
 	return len(prefixes)
 }
 
 func generateIndexHtml(count int, bucket string, htmlManager *services.HtmlManager, awsManager *services.AwsManager) {
 	indexHtml, err := htmlManager.GetIndexHtml(count)
-	utils.HandleError(err)
+	services.HandleError(err)
 
 	err = awsManager.UploadHTML(bucket, constants.IndexHtml, indexHtml)
-	utils.HandleError(err)
+	services.HandleError(err)
 }
 
 func generateErrorHtml(bucket string, htmlManager *services.HtmlManager, awsManager *services.AwsManager) {
 	errorHtml, err := htmlManager.GetErrorHtml()
-	utils.HandleError(err)
+	services.HandleError(err)
 
 	err = awsManager.UploadHTML(bucket, constants.ErrorHtml, errorHtml)
-	utils.HandleError(err)
+	services.HandleError(err)
 }

@@ -1,9 +1,8 @@
-﻿package commands
+package commands
 
 import (
 	"cloudphoto/internal/constants"
 	"cloudphoto/internal/services"
-	"cloudphoto/internal/utils"
 	"fmt"
 	"github.com/spf13/cobra"
 	"path/filepath"
@@ -19,18 +18,24 @@ func initDelete(cmd *cobra.Command, _ []string) {
 	album, _ := cmd.Flags().GetString(constants.Album)
 	photo, _ := cmd.Flags().GetString(constants.Photo)
 
-	iniConfig := utils.GetIniConfig()
+	configManager, err := services.NewConfigManager()
+	services.HandleError(err)
 
-	awsManager := utils.GetAwsManager(iniConfig)
+	iniConfig, err := configManager.TryGetConfig()
+	services.HandleError(err)
+
+	awsConfig := iniConfig.ToAwsConfig()
+	awsManager, err := services.NewAwsManager(awsConfig)
+	services.HandleError(err)
 
 	if len(photo) == 0 {
 		err := awsManager.DeletePhotosByPrefix(iniConfig.Bucket, album)
-		utils.HandleError(err)
+		services.HandleError(err)
 
 		fmt.Printf("Album %v deleted", album)
 	} else {
 		err := awsManager.DeletePhoto(iniConfig.Bucket, services.GetPhotoKey(album, filepath.Base(photo)))
-		utils.HandleError(err)
+		services.HandleError(err)
 
 		fmt.Printf("Photo %v deleted", photo)
 	}

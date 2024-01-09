@@ -2,13 +2,13 @@ package main
 
 import (
 	"cloudphoto/internal/app"
-	"cloudphoto/internal/utils"
+	"cloudphoto/internal/services"
 )
 
 func main() {
 	a, err := app.NewApp()
-	utils.HandleError(err)
+	services.HandleError(err)
 
 	err = a.AddCommands()
-	utils.HandleError(err)
+	services.HandleError(err)
 }
