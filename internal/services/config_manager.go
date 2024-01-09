@@ -1,7 +1,8 @@
-﻿package services
+package services
 
 import (
 	"cloudphoto/internal/constants"
+	"errors"
 	"fmt"
 	"gopkg.in/ini.v1"
 	"os"
@@ -35,17 +36,8 @@ func NewConfigManager() (*ConfigManager, error) {
 	return &ConfigManager{user: currentUser}, nil
 }
 
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return !os.IsNotExist(err)
-}
-
-func (cm ConfigManager) GetConfigFilePath() string {
-	return filepath.Join(cm.user.HomeDir, ".config", "cloudphoto", "cloudphotorc", "cloudphoto.ini")
-}
-
 func (cm ConfigManager) GenerateIni(config *IniConfig) error {
-	path := cm.GetConfigFilePath()
+	path := cm.getConfigFilePath()
 
 	cfg := ini.Empty()
 
@@ -92,12 +84,12 @@ func (cm ConfigManager) GenerateIni(config *IniConfig) error {
 	return nil
 }
 
-func (cm ConfigManager) TryGetConfig() (bool, *IniConfig, error) {
-	path := cm.GetConfigFilePath()
+func (cm ConfigManager) TryGetConfig() (*IniConfig, error) {
+	path := cm.getConfigFilePath()
 
 	cfg, err := ini.Load(path)
 	if err != nil {
-		return false, nil, err
+		return nil, err
 	}
 
 	section := cfg.Section(constants.DefaultSectionName)
@@ -109,7 +101,20 @@ func (cm ConfigManager) TryGetConfig() (bool, *IniConfig, error) {
 		EndpointURL: section.Key(constants.EndpointURL).String(),
 	}
 
-	return cm.isValidConfig(*config), config, nil
+	if !cm.isValidConfig(*config) {
+		return nil, errors.New("ini config file is not valid")
+	}
+
+	return config, nil
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
+}
+
+func (cm ConfigManager) getConfigFilePath() string {
+	return filepath.Join(cm.user.HomeDir, ".config", "cloudphoto", "cloudphotorc", "cloudphoto.ini")
 }
 
 func (cm ConfigManager) isValidConfig(config IniConfig) bool {

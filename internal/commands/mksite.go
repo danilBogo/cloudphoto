@@ -25,33 +25,33 @@ func initMksite(_ *cobra.Command, _ []string) {
 	awsManager, err := services.NewAwsManager(awsConfig)
 	services.HandleError(err)
 
-	setReadPublic(iniConfig.Bucket, awsManager)
+	setReadPublic(awsManager, iniConfig.Bucket)
 
-	configureStaticWebsite(iniConfig.Bucket, awsManager)
+	configureStaticWebsite(awsManager, iniConfig.Bucket)
 
 	htmlManager, err := services.NewHtmlManager()
 	services.HandleError(err)
 
-	count := generateAlbumsHtml(iniConfig.Bucket, htmlManager, awsManager)
+	count := generateAlbumsHtml(htmlManager, awsManager, iniConfig.Bucket)
 
-	generateIndexHtml(count, iniConfig.Bucket, htmlManager, awsManager)
+	generateIndexHtml(htmlManager, awsManager, count, iniConfig.Bucket)
 
-	generateErrorHtml(iniConfig.Bucket, htmlManager, awsManager)
+	generateErrorHtml(htmlManager, awsManager, iniConfig.Bucket)
 
 	fmt.Printf("http://%v.website.yandexcloud.net/\n", iniConfig.Bucket)
 }
 
-func setReadPublic(bucket string, awsManager *services.AwsManager) {
+func setReadPublic(awsManager *services.AwsManager, bucket string) {
 	err := awsManager.PutBucketACL(bucket, s3.BucketCannedACLPublicRead)
 	services.HandleError(err)
 }
 
-func configureStaticWebsite(bucket string, awsManager *services.AwsManager) {
+func configureStaticWebsite(awsManager *services.AwsManager, bucket string) {
 	err := awsManager.ConfigureStaticWebsite(bucket)
 	services.HandleError(err)
 }
 
-func generateAlbumsHtml(bucket string, htmlManager *services.HtmlManager, awsManager *services.AwsManager) int {
+func generateAlbumsHtml(htmlManager *services.HtmlManager, awsManager *services.AwsManager, bucket string) int {
 	prefixes, err := awsManager.GetPrefixes(bucket)
 	for prefixIndex, prefix := range prefixes {
 		awsPhotos, err := awsManager.GetPhotos(bucket, prefix)
@@ -82,7 +82,7 @@ func generateAlbumsHtml(bucket string, htmlManager *services.HtmlManager, awsMan
 	return len(prefixes)
 }
 
-func generateIndexHtml(count int, bucket string, htmlManager *services.HtmlManager, awsManager *services.AwsManager) {
+func generateIndexHtml(htmlManager *services.HtmlManager, awsManager *services.AwsManager, count int, bucket string) {
 	indexHtml, err := htmlManager.GetIndexHtml(count)
 	services.HandleError(err)
 
@@ -90,7 +90,7 @@ func generateIndexHtml(count int, bucket string, htmlManager *services.HtmlManag
 	services.HandleError(err)
 }
 
-func generateErrorHtml(bucket string, htmlManager *services.HtmlManager, awsManager *services.AwsManager) {
+func generateErrorHtml(htmlManager *services.HtmlManager, awsManager *services.AwsManager, bucket string) {
 	errorHtml, err := htmlManager.GetErrorHtml()
 	services.HandleError(err)
 
