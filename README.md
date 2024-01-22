@@ -1,19 +1,19 @@
-Требуется установленный go
+Requires an installed go
 
-Порядок команд:
+The order of commands:
 1) go build
 2) go install
 
-Далее можно пользоваться командами:
+Then you can use the commands:
 
-1) cloudphoto init (инициализация программы)
+1) cloudphoto init (program initialization)
 
-2) cloudphoto upload --album ALBUM [--path PHOTOS_DIR] (отправка фотографий в облачное хранилище)
+2) cloudphoto upload --album ALBUM [--path PHOTOS_DIR] (sending photos to the cloud storage)
 
-3) cloudphoto download --album ALBUM [--path PHOTOS_DIR] (загрузка фотографий из облачного хранилища)
+3) cloudphoto download --album ALBUM [--path PHOTOS_DIR] (uploading photos from cloud storage)
 
-4) cloudphoto list [--album ALBUM] (просмотр списка альбомов и фотографий в альбоме)
+4) cloudphoto list [--album ALBUM] (view the list of albums and photos in the album)
 
-5) cloudphoto delete --album ALBUM [--photo PHOTO] (удаление альбомов и фотографий)
+5) cloudphoto delete --album ALBUM [--photo PHOTO] (deleting albums and photos)
 
-6) cloudphoto mksite (генерация и публикация веб-страниц фотоархива)
+6) cloudphoto mksite (generation and publication of photo archive web pages)
